@@ -5,24 +5,33 @@ import (
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
+	"time"
 )
 
 
 func TestBasicSend(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		writer.Header().Set("Content-Type", "application/json")
-		base := new(BaseStandard)
-		response, _ := json.Marshal(base)
-		_, _ = writer.Write(response)
+		json := `{"auditInfo":{},"items":[{"echo":"Hello World"}],"interfaceSettings":{}}`
+		_, _ = writer.Write([]byte(json))
 	}))
 	defer ts.Close()
 
-	apicall := New("GET", ts.URL)
+	apicall := New("GET", ts.URL, "", 7 * time.Second)
 	response, err := apicall.Send()
+	host, _ := os.Hostname()
+	ip, _ := externalIP()
+
 	assert.Nil(t, err, "Don't expect error here")
-	expected := new(BaseStandard)
-	assert.Equal(t, expected , response)
+	assert.NotNil(t, apicall)
+	assert.NotNil(t, response.cancel)
+	assert.NotNil(t, response.ctx)
+	assert.Equal(t, host, response.Host)
+	assert.Equal(t, ip, response.ClientIP)
+	assert.Equal(t, 200, response.StatusCode)
+	assert.NotEmpty(t, response.OperationId)
 }
 
 func TestCanParseItems(t *testing.T) {
@@ -43,7 +52,7 @@ func TestCanParseItems(t *testing.T) {
 	myItems := []MyItems{}
 
 
-	apicall := New("GET", ts.URL)
+	apicall := New("GET", ts.URL, "", 7 * time.Second)
 	response, err := apicall.Send()
 
 	err = response.GetItems(&myItems)
@@ -66,7 +75,7 @@ func TestCanParseOk(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	apicall := New("GET", ts.URL)
+	apicall := New("GET", ts.URL, "", 7 * time.Second)
 	response, err := apicall.Send()
 	assert.Nil(t, err)
 	assert.Exactly(t, true, response.IsOk())
@@ -83,7 +92,7 @@ func TestCanNotParseOk(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	apicall := New("GET", ts.URL)
+	apicall := New("GET", ts.URL, "", 7 * time.Second)
 	response, err := apicall.Send()
 	assert.Nil(t, err)
 	assert.Exactly(t, false, response.IsOk())
@@ -102,7 +111,7 @@ func TestItemsCannotBeEmpty(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	apicall := New("GET", ts.URL)
+	apicall := New("GET", ts.URL, "", 7 * time.Second)
 	response, err := apicall.Send()
 	assert.Nil(t, err)
 	assert.Exactly(t, false, response.IsOk())
@@ -125,7 +134,7 @@ func TestIfReturnErrors(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	apicall := New("GET", ts.URL)
+	apicall := New("GET", ts.URL, "", 7 * time.Second)
 	response, err := apicall.Send()
 	assert.Nil(t, err)
 	assert.Exactly(t, false, response.IsOk())
