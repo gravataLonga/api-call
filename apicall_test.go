@@ -139,3 +139,17 @@ func TestIfReturnErrors(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Exactly(t, false, response.IsOk())
 }
+
+func TestCanCancelRequest(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		time.Sleep(5 * time.Second)
+		writer.Header().Set("Content-Type", "application/json")
+		j := `{"auditInfo":{},"items":[{"echo":"Hello World"}],"interfaceSettings":{}}`
+		_, _ = writer.Write([]byte(j))
+	}))
+	defer ts.Close()
+
+	apicall := New("GET", ts.URL, "", 1 * time.Second)
+	response, err := apicall.Send()
+	assert.Nil(t, err)
+	assert.Exactly(t, false, response.IsOk())

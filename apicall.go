@@ -42,7 +42,7 @@ func (a *ApiCall) Send() (*BaseStandard, error) {
 
 	// Format Response
 	if err != nil {
-		return nil, err
+		return formatExceptionResponse(baseResponse, response, err), nil
 	}
 
 	err = formatResponse(baseResponse, response)
@@ -89,7 +89,7 @@ func newBaseStandard(a *ApiCall) *BaseStandard  {
 }
 
 // formatResponse it will pack raw response into our structure
-func formatResponse(baseResponse *BaseStandard, response *http.Response) (error){
+func formatResponse(baseResponse *BaseStandard, response *http.Response) error {
 	binary, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		return err
@@ -116,6 +116,22 @@ func formatResponse(baseResponse *BaseStandard, response *http.Response) (error)
 	}
 
 	return  nil
+}
+
+func formatExceptionResponse(baseResponse *BaseStandard, response *http.Response, err error) *BaseStandard {
+	var meta Meta
+	if err == context.DeadlineExceeded {
+		meta.Code = "1"
+		meta.Description = "Timeout"
+	}
+
+	if err == context.Canceled {
+		meta.Code = "2"
+		meta.Description = "Canceled"
+	}
+
+	baseResponse.Errors.Items = append(baseResponse.Errors.Items, meta)
+	return baseResponse
 }
 
 func externalIP() (string, error) {
