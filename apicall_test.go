@@ -149,7 +149,8 @@ func TestCanCancelRequest(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	apicall := New("GET", ts.URL, "", 1 * time.Second)
+	apicall := New("GET", ts.URL, "", 1*time.Second)
 	response, err := apicall.Send()
 	assert.Nil(t, err)
 	assert.Exactly(t, false, response.IsOk())
+}
