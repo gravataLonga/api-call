@@ -1,7 +1,6 @@
-package apicall
+package pkg
 
 import (
-	"context"
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
@@ -49,11 +48,9 @@ type AuditInfo struct {
 // BaseStandard it's ao final response
 // which be return when called from apicall.Send()
 type BaseStandard struct {
-	Items 			  *json.RawMessage `json:"items"`
+	Items             *json.RawMessage `json:"items"`
 	AuditInfo         `json:"auditInfo"`
 	InterfaceSettings interface{} `json:"interfaceSettings"`
-	ctx 			  *context.Context
-	cancel 			  *context.CancelFunc
 }
 
 // GetItems it transform delayed parsed json into structure provider

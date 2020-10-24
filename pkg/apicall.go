@@ -1,4 +1,4 @@
-package apicall
+package pkg
 
 import (
 	"context"
@@ -14,33 +14,59 @@ import (
 // ApiCall hold configuration
 // to make a request
 type ApiCall struct {
-	Url string
-	Method string
+	Url     string
+	Method  string
 	Headers http.Header
 	BaseUrl string
 	Timeout time.Duration
+	ctx     *context.Context
+	cancel  *context.CancelFunc
 }
 
-func New(method, url, baseUrl string, timeout time.Duration) *ApiCall {
-	return &ApiCall{
-		url,
-		method,
-		nil,
-		baseUrl,
-		timeout,
+type Option func(ApiCall) *ApiCall
+
+func NewApiCall(options ...Option) *ApiCall {
+	a := &ApiCall{}
+	for _, option := range options {
+		a = option(*a)
+	}
+	return a
+}
+
+func WithUrl(url string) Option {
+	return func(a ApiCall) *ApiCall {
+		a.Url = url
+		return &a
+	}
+}
+
+func WithMethod(method string) Option {
+	return func(a ApiCall) *ApiCall {
+		a.Method = method
+		return &a
+	}
+}
+
+func WithBaseUrl(base string) Option {
+	return func(a ApiCall) *ApiCall {
+		a.BaseUrl = base
+		return &a
+	}
+}
+
+func WithTimeout(duration time.Duration) Option {
+	return func(a ApiCall) *ApiCall {
+		a.Timeout = duration
+		return &a
 	}
 }
 
 // Send it will send a request and parse response in order to
 // be compatible with BaseStandard
 func (a *ApiCall) Send() (*BaseStandard, error) {
-	// Base Settings
 	var baseResponse = newBaseStandard(a)
+	response, err := makeRequest(*a.ctx, a.Method, a.Url)
 
-	// Make Request
-	response, err := makeRequest(*baseResponse.ctx, a.Method, a.Url)
-
-	// Format Response
 	if err != nil {
 		return formatExceptionResponse(baseResponse, response, err), nil
 	}
@@ -67,7 +93,7 @@ func makeRequest(ctx context.Context, method, url string) (*http.Response, error
 	return resp, nil
 }
 
-func newBaseStandard(a *ApiCall) *BaseStandard  {
+func newBaseStandard(a *ApiCall) *BaseStandard {
 	ctx := context.Background()
 	// Base Settings for MakingRequest
 	var baseResponse = new(BaseStandard)
@@ -80,8 +106,8 @@ func newBaseStandard(a *ApiCall) *BaseStandard  {
 		ctx, cancel = context.WithTimeout(ctx, a.Timeout)
 	}
 
-	baseResponse.ctx = &ctx
-	baseResponse.cancel = &cancel
+	a.ctx = &ctx
+	a.cancel = &cancel
 	operationId, _ := baseResponse.NewOperationId()
 	baseResponse.AuditInfo.OperationId = operationId
 
@@ -115,7 +141,7 @@ func formatResponse(baseResponse *BaseStandard, response *http.Response) error {
 		(*baseResponse).AuditInfo.Ok = len((*baseResponse).AuditInfo.Errors.Items) <= 0
 	}
 
-	return  nil
+	return nil
 }
 
 func formatExceptionResponse(baseResponse *BaseStandard, response *http.Response, err error) *BaseStandard {
@@ -147,7 +173,7 @@ func externalIP() (string, error) {
 		}
 
 		// loopback interface
-		if iface.Flags & net.FlagLoopback != 0 {
+		if iface.Flags&net.FlagLoopback != 0 {
 			continue
 		}
 

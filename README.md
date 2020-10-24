@@ -5,8 +5,13 @@
 ### Create configuration
 
 ```
-apiCall := apicall.New("GET", "/users")
+apiCall := apicall.New(
+    WithMethod("GET"),
+    WithUrl("/"),
+)
 ```
+
+> Tip: You can create your own method for configuration, you only need to implement Option type.  
 
 ### Handler Response  
 
