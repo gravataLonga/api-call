@@ -1,5 +1,7 @@
 # API CALL - UTP  
 
+![Test](https://github.com/gravataLonga/api-call/workflows/Test/badge.svg?branch=master)  
+
 ## How to use  
 
 ### Create configuration
