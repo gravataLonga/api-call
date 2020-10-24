@@ -3,7 +3,7 @@ name: Release Go project
 on:
   push:
     tags:
-      - "*" # triggers only if push new tag version, like `0.8.4` or else
+      - "*"
 
 jobs:
   build:
@@ -23,7 +23,7 @@ jobs:
       - name: Set up Go 1.15
         uses: actions/setup-go@v2
         with:
-          go-version: ${{ matrix.go-version }}.goreleaser.yml
+          go-version: ${{ matrix.go-version }}
         id: go
 
       - name: Run GoReleaser
