@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -14,8 +15,6 @@ import (
 // ApiCall hold configuration
 // to make a request
 type ApiCall struct {
-	Url     string
-	Method  string
 	Headers http.Header
 	BaseUrl string
 	Timeout time.Duration
@@ -30,21 +29,8 @@ func NewApiCall(options ...Option) *ApiCall {
 	for _, option := range options {
 		a = option(*a)
 	}
+	a.Headers = make(http.Header)
 	return a
-}
-
-func WithUrl(url string) Option {
-	return func(a ApiCall) *ApiCall {
-		a.Url = url
-		return &a
-	}
-}
-
-func WithMethod(method string) Option {
-	return func(a ApiCall) *ApiCall {
-		a.Method = method
-		return &a
-	}
 }
 
 func WithBaseUrl(base string) Option {
@@ -63,9 +49,9 @@ func WithTimeout(duration time.Duration) Option {
 
 // Send it will send a request and parse response in order to
 // be compatible with BaseStandard
-func (a *ApiCall) Send() (*BaseStandard, error) {
+func (a *ApiCall) Send(method, url string, body io.Reader) (*BaseStandard, error) {
 	var baseResponse = newBaseStandard(a)
-	response, err := makeRequest(*a.ctx, a.Method, a.Url)
+	response, err := makeRequest(*a.ctx, method, url, body)
 
 	if err != nil {
 		return formatExceptionResponse(baseResponse, response, err), nil
@@ -80,8 +66,8 @@ func (a *ApiCall) Send() (*BaseStandard, error) {
 }
 
 // makeRequest is a function used internally only to make request
-func makeRequest(ctx context.Context, method, url string) (*http.Response, error) {
-	req, err := http.NewRequestWithContext(ctx, method, url, nil)
+func makeRequest(ctx context.Context, method, url string, body io.Reader) (*http.Response, error) {
+	req, err := http.NewRequestWithContext(ctx, method, url, body)
 	if err != nil {
 		return nil, err
 	}
@@ -128,21 +114,17 @@ func formatResponse(baseResponse *BaseStandard, response *http.Response) error {
 	baseResponse.AuditInfo.StatusCode = response.StatusCode
 	baseResponse.AuditInfo.Duration = time.Since(baseResponse.Timestamp)
 
-	if (*baseResponse).AuditInfo.Ok && (*baseResponse).AuditInfo.Errors.Items != nil {
-		(*baseResponse).AuditInfo.Ok = len((*baseResponse).AuditInfo.Errors.Items) <= 0
-	}
-
 	return nil
 }
 
 func formatExceptionResponse(baseResponse *BaseStandard, response *http.Response, err error) *BaseStandard {
 	var meta Meta
-	if err == context.DeadlineExceeded {
+	if errors.Is(err, context.DeadlineExceeded) {
 		meta.Code = "1"
 		meta.Description = "Timeout"
 	}
 
-	if err == context.Canceled {
+	if errors.Is(err, context.Canceled) {
 		meta.Code = "2"
 		meta.Description = "Canceled"
 	}

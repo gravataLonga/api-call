@@ -8,24 +8,21 @@ import (
 )
 
 var (
-	url    = flag.String("url", "", "Define url where to make a request")
-	method = flag.String("method", "GET", "Which method")
+	baseurl = flag.String("baseurl", "", "Define base url where to make a request")
+	url     = flag.String("url", "", "Define url where to make a request")
+	method  = flag.String("method", "GET", "Which method")
 )
 
 func run() error {
 	flag.Parse()
 
 	options := []pkg.Option{}
-	if url != nil {
-		options = append(options, pkg.WithUrl(*url))
-	}
-
-	if method != nil {
-		options = append(options, pkg.WithMethod(*method))
+	if baseurl != nil {
+		options = append(options, pkg.WithBaseUrl(*baseurl))
 	}
 
 	apiCall := pkg.NewApiCall(options...)
-	base, err := apiCall.Send()
+	base, err := apiCall.Send(*method, *url, nil)
 
 	if err != nil {
 		return err

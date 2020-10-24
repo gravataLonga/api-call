@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/stretchr/testify/assert"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 	"time"
 )
@@ -18,13 +20,9 @@ func TestPassingOptions(t *testing.T) {
 	}{
 		{
 			[]Option{
-				WithMethod(http.MethodGet),
-				WithUrl("hello"),
 				WithBaseUrl("https://google.pt"),
 			},
 			ApiCall{
-				"hello",
-				"GET",
 				http.Header{},
 				"https://google.pt",
 				0,
@@ -44,14 +42,6 @@ func TestPassingOptions(t *testing.T) {
 				t.Errorf("Base url not match, expect: %v and got %v", a.BaseUrl, table.a.BaseUrl)
 			}
 
-			if a.Method != table.a.Method {
-				t.Errorf("Method not match, expect: %v and got %v", a.Method, table.a.Method)
-			}
-
-			if a.Url != table.a.Url {
-				t.Errorf("Url not match, expect: %v and got %v", a.Url, table.a.Url)
-			}
-
 			if a.Timeout != table.a.Timeout {
 				t.Errorf("Timeout not match, expect: %v and got %v", a.Timeout, table.a.Timeout)
 			}
@@ -69,12 +59,10 @@ func TestBasicSend(t *testing.T) {
 	defer ts.Close()
 
 	apicall := NewApiCall(
-		WithMethod("GET"),
-		WithUrl(ts.URL),
-		WithTimeout(7*time.Second),
+		WithTimeout(7 * time.Second),
 	)
 
-	response, err := apicall.Send()
+	response, err := apicall.Send("GET", ts.URL, nil)
 	host, _ := os.Hostname()
 	ip, _ := externalIP()
 
@@ -84,6 +72,7 @@ func TestBasicSend(t *testing.T) {
 	assert.Equal(t, ip, response.ClientIP)
 	assert.Equal(t, 200, response.StatusCode)
 	assert.NotEmpty(t, response.OperationId)
+	assert.True(t, response.IsOk())
 }
 
 func TestCanParseItems(t *testing.T) {
@@ -104,17 +93,16 @@ func TestCanParseItems(t *testing.T) {
 	myItems := []MyItems{}
 
 	apicall := NewApiCall(
-		WithMethod("GET"),
-		WithUrl(ts.URL),
-		WithTimeout(7*time.Second),
+		WithTimeout(7 * time.Second),
 	)
-	response, err := apicall.Send()
+	response, err := apicall.Send("GET", ts.URL, nil)
 
 	err = response.GetItems(&myItems)
 	assert.NotNil(t, myItems)
 	assert.Nil(t, err, "Don't expect error here")
 	assert.Len(t, myItems, 1)
 	assert.Exactly(t, myItems, expectedItems, "Unable to get items from response")
+	assert.True(t, response.IsOk())
 }
 
 func TestCanParseOk(t *testing.T) {
@@ -131,11 +119,9 @@ func TestCanParseOk(t *testing.T) {
 	defer ts.Close()
 
 	apicall := NewApiCall(
-		WithMethod("GET"),
-		WithUrl(ts.URL),
-		WithTimeout(7*time.Second),
+		WithTimeout(7 * time.Second),
 	)
-	response, err := apicall.Send()
+	response, err := apicall.Send("GET", ts.URL, nil)
 	assert.Nil(t, err)
 	assert.Exactly(t, true, response.IsOk())
 }
@@ -152,11 +138,9 @@ func TestCanNotParseOk(t *testing.T) {
 	defer ts.Close()
 
 	apicall := NewApiCall(
-		WithMethod("GET"),
-		WithUrl(ts.URL),
-		WithTimeout(7*time.Second),
+		WithTimeout(7 * time.Second),
 	)
-	response, err := apicall.Send()
+	response, err := apicall.Send("GET", ts.URL, nil)
 	assert.Nil(t, err)
 	assert.Exactly(t, false, response.IsOk())
 }
@@ -175,11 +159,9 @@ func TestItemsCannotBeEmpty(t *testing.T) {
 	defer ts.Close()
 
 	apicall := NewApiCall(
-		WithMethod("GET"),
-		WithUrl(ts.URL),
-		WithTimeout(7*time.Second),
+		WithTimeout(7 * time.Second),
 	)
-	response, err := apicall.Send()
+	response, err := apicall.Send("GET", ts.URL, nil)
 	assert.Nil(t, err)
 	assert.Exactly(t, false, response.IsOk())
 }
@@ -202,16 +184,14 @@ func TestIfReturnErrors(t *testing.T) {
 	defer ts.Close()
 
 	apicall := NewApiCall(
-		WithMethod("GET"),
-		WithUrl(ts.URL),
-		WithTimeout(7*time.Second),
+		WithTimeout(7 * time.Second),
 	)
-	response, err := apicall.Send()
+	response, err := apicall.Send("GET", ts.URL, nil)
 	assert.Nil(t, err)
 	assert.Exactly(t, false, response.IsOk())
 }
 
-func TestCanCancelRequest(t *testing.T) {
+func TestTimeoutReach(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		time.Sleep(200 * time.Millisecond)
 		writer.Header().Set("Content-Type", "application/json")
@@ -221,11 +201,36 @@ func TestCanCancelRequest(t *testing.T) {
 	defer ts.Close()
 
 	apicall := NewApiCall(
-		WithMethod("GET"),
-		WithUrl(ts.URL),
-		WithTimeout(100*time.Millisecond),
+		WithTimeout(100 * time.Millisecond),
 	)
-	response, err := apicall.Send()
+	response, err := apicall.Send("GET", ts.URL, nil)
 	assert.Nil(t, err)
 	assert.Exactly(t, false, response.IsOk())
+	assert.Equal(t, "Timeout", response.AuditInfo.Errors.Items[0].Description)
+	assert.Equal(t, "1", response.AuditInfo.Errors.Items[0].Code)
+}
+
+func TestAddHeader(t *testing.T) {
+	apicall := NewApiCall(
+		WithTimeout(100 * time.Millisecond),
+	)
+	apicall.Headers.Set("token", "abcdefghijk")
+	assert.Equal(t, "abcdefghijk", apicall.Headers.Get("Token"))
+}
+
+func Test(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, r *http.Request) {
+		time.Sleep(200 * time.Millisecond)
+		writer.Header().Set("Content-Type", "application/json")
+		b, _ := ioutil.ReadAll(r.Body)
+		defer r.Body.Close()
+		j := `{"auditInfo":{},"items":[` + string(b) + `}],"interfaceSettings":{}}`
+		_, _ = writer.Write([]byte(j))
+	}))
+	defer ts.Close()
+	apicall := NewApiCall(
+		WithTimeout(100 * time.Millisecond),
+	)
+	resp, _ := apicall.Send("GET", ts.URL, strings.NewReader(`{"hello":"world"}`))
+	fmt.Println(resp)
 }

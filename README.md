@@ -11,8 +11,7 @@
 
 ```
 apiCall := apicall.New(
-    WithMethod("GET"),
-    WithUrl("/"),
+    WithBaseUrl("https://www.google.pt"),
 )
 ```
 
