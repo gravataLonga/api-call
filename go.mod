@@ -1,4 +1,4 @@
-module creativecode.pt/api-call
+module github.com/gravataLonga/api-call
 
 go 1.14
 

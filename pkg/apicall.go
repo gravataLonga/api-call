@@ -128,15 +128,6 @@ func formatResponse(baseResponse *BaseStandard, response *http.Response) error {
 	baseResponse.AuditInfo.StatusCode = response.StatusCode
 	baseResponse.AuditInfo.Duration = time.Since(baseResponse.Timestamp)
 
-	(*baseResponse).AuditInfo.Ok = true
-	if baseResponse.AuditInfo.StatusCode < http.StatusOK && baseResponse.AuditInfo.StatusCode >= http.StatusMultipleChoices {
-		(*baseResponse).AuditInfo.Ok = false
-	}
-
-	if (*baseResponse).AuditInfo.Ok {
-		(*baseResponse).AuditInfo.Ok = baseResponse.HasItems()
-	}
-
 	if (*baseResponse).AuditInfo.Ok && (*baseResponse).AuditInfo.Errors.Items != nil {
 		(*baseResponse).AuditInfo.Ok = len((*baseResponse).AuditInfo.Errors.Items) <= 0
 	}

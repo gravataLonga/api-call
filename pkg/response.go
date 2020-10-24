@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"reflect"
+	"strings"
 	"time"
 )
 
@@ -16,33 +18,41 @@ type Meta struct {
 	Description string `json:"description"`
 }
 
+type ItemsMeta []Meta
+
+type Items struct {
+	Items ItemsMeta `json:"items"`
+}
+
+func (i Items) String() string {
+	var s []string
+	for _, item := range i.Items {
+		s = append(s, fmt.Sprintf("[%v]: %v", item.Code, item.Description))
+	}
+	return strings.Join(s, ", ")
+}
+
 // AuditInfo holds information about
 // request/response from server side
 type AuditInfo struct {
 	// Duration of request
-	Duration 	time.Duration 	    `json:"duration"`
+	Duration time.Duration `json:"duration"`
 	// Timestamp when the request started
-	Timestamp 	time.Time 		    `json:"timestamp"`
+	Timestamp time.Time `json:"timestamp"`
 	// Host is hostname of made request
-	Host     	string  			`json:"host"`
+	Host string `json:"host"`
 	// ClientIP who made request
-	ClientIP 	string  			`json:"clientIP"`
+	ClientIP string `json:"clientIP"`
 	// Ok if we got success request
-	Ok       	bool    			`json:"ok"`
+	Ok bool `json:"ok"`
 	// StatusCode of result
-	StatusCode  int 				`json:"statusCode"`
+	StatusCode int `json:"statusCode"`
 	// OperationId is a random string for logging purpose
-	OperationId string 				`json:"operationId"`
-	Errors   	struct {
-		Items []Meta `json:"items"`
-	} `json:"errors"`
-	Info struct {
-		Items []Meta `json:"items"`
-	} `json:"info"`
-	Warning struct {
-		Items []Meta `json:"items"`
-	} `json:"warning"`
-	Total int64 `json:"total"`
+	OperationId string `json:"operationId"`
+	Errors      Items  `json:"errors"`
+	Info        Items  `json:"info"`
+	Warning     Items  `json:"warning"`
+	Total       int64  `json:"total"`
 }
 
 // BaseStandard it's ao final response
@@ -56,7 +66,7 @@ type BaseStandard struct {
 // GetItems it transform delayed parsed json into structure provider
 // e.g. response.GetItems(&MyStruct{})
 // MyStruct[0].Foo, etc.
-func (r *BaseStandard) GetItems(structType interface{}) (error) {
+func (r *BaseStandard) GetItems(structType interface{}) error {
 	items := r.Items
 	return json.Unmarshal(*items, structType)
 }
@@ -65,12 +75,24 @@ func (r *BaseStandard) GetItems(structType interface{}) (error) {
 // which implies that response must be of range of 200 status code
 // and items length > 0
 func (r *BaseStandard) IsOk() bool {
-	return r.Ok
+	if r.AuditInfo.StatusCode < http.StatusOK || r.AuditInfo.StatusCode >= http.StatusMultipleChoices {
+		return false
+	}
+
+	if !r.HasItems() {
+		return false
+	}
+
+	if len(r.AuditInfo.Errors.Items) > 0 {
+		return false
+	}
+
+	return true
 }
 
 // HasItems it will return true if
 // BaseStandard.Items is not nil and len > 0
-func (r *BaseStandard) HasItems() bool  {
+func (r *BaseStandard) HasItems() bool {
 	if r.Items == nil {
 		return false
 	}
@@ -80,7 +102,7 @@ func (r *BaseStandard) HasItems() bool  {
 		return false
 	}
 
-	return genericItems != nil && reflect.ValueOf(genericItems).Len() >0
+	return genericItems != nil && reflect.ValueOf(genericItems).Len() > 0
 }
 
 func (r *BaseStandard) NewOperationId() (string, error) {
