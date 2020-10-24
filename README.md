@@ -1,6 +1,9 @@
 # API CALL - UTP  
 
-![Test](https://github.com/gravataLonga/api-call/workflows/Test/badge.svg?branch=master)  
+![Test](https://github.com/gravataLonga/api-call/workflows/Test/badge.svg?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/gravataLonga/api-call/badge.svg?branch=master)](https://coveralls.io/github/gravataLonga/api-call?branch=master)
+[![Go Report Card](https://goreportcard.com/badge/github.com/gravatalonga/api-call)](https://goreportcard.com/badge/github.com/gravatalonga/api-call)   
+
 
 ## How to use  
 
