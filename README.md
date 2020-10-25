@@ -4,6 +4,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/gravataLonga/api-call/badge.svg?branch=master)](https://coveralls.io/github/gravataLonga/api-call?branch=master)
 [![Go Report Card](https://goreportcard.com/badge/github.com/gravatalonga/api-call)](https://goreportcard.com/badge/github.com/gravatalonga/api-call)   
 
+Read [documentation here](https://pkg.go.dev/mod/github.com/gravataLonga/api-call).
 
 ## How to use  
 
@@ -20,7 +21,7 @@ apiCall := apicall.New(
 ### Handler Response  
 
 ```
-response, err := apiCall.Send()
+response, err := apiCall.Send("GET", "/users/list", nil)  
 if err != nil {
     panic("An error happen")
 }
@@ -35,7 +36,7 @@ fmt.Println(response) // response is apicall.BaseStandard struct
 ### Bind your own structure to response  
 
 ```
-response, err := apiCall.Send()
+response, err := apiCall.Send("POST", "/get-users", nil)
 if err != nil {
     panic("An error happen")
 }
