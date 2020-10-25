@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"io"
@@ -34,10 +35,10 @@ type Option func(ApiCall) *ApiCall
 // NewApiCall it will create a new ApiCall
 func NewApiCall(options ...Option) *ApiCall {
 	a := &ApiCall{}
+	a.Headers = make(http.Header)
 	for _, option := range options {
 		a = option(*a)
 	}
-	a.Headers = make(http.Header)
 	return a
 }
 
@@ -53,6 +54,15 @@ func WithBaseUrl(base string) Option {
 func WithTimeout(duration time.Duration) Option {
 	return func(a ApiCall) *ApiCall {
 		a.Timeout = duration
+		return &a
+	}
+}
+
+// WithAuthentication it will create a basic authentication bearer
+func WithAuthentication(username, password string) Option {
+	return func(a ApiCall) *ApiCall {
+		encode := base64.URLEncoding.EncodeToString([]byte(username + ":" + password))
+		a.Headers.Set("Authorization", "Basic "+encode)
 		return &a
 	}
 }

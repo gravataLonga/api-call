@@ -69,7 +69,33 @@ func TestBuildUrl(t *testing.T) {
 	assert.Zero(t, response.AuditInfo.Warning)
 	assert.Empty(t, response.AuditInfo.Info)
 	assert.Zero(t, response.AuditInfo.Info)
+}
 
+func TestCanAddHeaders(t *testing.T) {
+	apicall := NewApiCall()
+	apicall.Headers.Set("hello", "world")
+
+	assert.NotNil(t, apicall.Headers)
+	assert.Equal(t, "world", apicall.Headers.Get("Hello"))
+}
+
+func TestCanAddHeaderWithOption(t *testing.T) {
+	apicall := NewApiCall(func(a ApiCall) *ApiCall {
+		a.Headers.Set("hello", "world")
+		return &a
+	})
+
+	assert.NotNil(t, apicall.Headers)
+	assert.Equal(t, "world", apicall.Headers.Get("Hello"))
+}
+
+func TestOptionBearerToken(t *testing.T) {
+	apicall := NewApiCall(
+		WithAuthentication("Username", "Password"),
+	)
+
+	assert.NotNil(t, apicall.Headers)
+	assert.Equal(t, "Basic VXNlcm5hbWU6UGFzc3dvcmQ=", apicall.Headers.Get("Authorization"))
 }
 
 func TestBasicSend(t *testing.T) {
