@@ -15,15 +15,23 @@ import (
 // ApiCall hold configuration
 // to make a request
 type ApiCall struct {
+	// Headers is a map[string][]string struct which can hold
+	// header information.
 	Headers http.Header
+	// BaseUrl is a base url where all url will made
 	BaseUrl string
+	// Timeout of duration of request, if reach to limit it will return
+	// BaseStandard response with a Error item
 	Timeout time.Duration
 	ctx     *context.Context
 	cancel  *context.CancelFunc
 }
 
+// Option is a type to make useful of First-Class Function
+// in order to manipulate of ApiCall structure
 type Option func(ApiCall) *ApiCall
 
+// NewApiCall it will create a new ApiCall
 func NewApiCall(options ...Option) *ApiCall {
 	a := &ApiCall{}
 	for _, option := range options {
@@ -33,6 +41,7 @@ func NewApiCall(options ...Option) *ApiCall {
 	return a
 }
 
+// WithBaseUrl it will modified ApiCall.BaseUrl field
 func WithBaseUrl(base string) Option {
 	return func(a ApiCall) *ApiCall {
 		a.BaseUrl = base
@@ -40,6 +49,7 @@ func WithBaseUrl(base string) Option {
 	}
 }
 
+// WithBaseUrl it will modified ApiCall.Timeout field
 func WithTimeout(duration time.Duration) Option {
 	return func(a ApiCall) *ApiCall {
 		a.Timeout = duration
@@ -94,7 +104,7 @@ func newBaseStandard(a *ApiCall) *BaseStandard {
 
 	a.ctx = &ctx
 	a.cancel = &cancel
-	operationId, _ := baseResponse.NewOperationId()
+	operationId, _ := baseResponse.newOperationId()
 	baseResponse.AuditInfo.OperationId = operationId
 
 	return baseResponse

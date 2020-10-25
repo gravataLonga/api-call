@@ -12,18 +12,21 @@ import (
 )
 
 // Meta hold information of AuditInfo
-// for keys Errors, Info, Warning
+// for keys Errors, Info and Warning
 type Meta struct {
 	Code        string `json:"code"`
 	Description string `json:"description"`
 }
 
+// ItemsMeta is slice of Meta
 type ItemsMeta []Meta
 
+// Items hold information for each key
 type Items struct {
 	Items ItemsMeta `json:"items"`
 }
 
+// String it will format into string from Slice of Meta
 func (i Items) String() string {
 	var s []string
 	for _, item := range i.Items {
@@ -105,7 +108,7 @@ func (r *BaseStandard) HasItems() bool {
 	return genericItems != nil && reflect.ValueOf(genericItems).Len() > 0
 }
 
-func (r *BaseStandard) NewOperationId() (string, error) {
+func (r *BaseStandard) newOperationId() (string, error) {
 	h := md5.New()
 	_, err := io.WriteString(h, r.AuditInfo.ClientIP)
 	if err != nil {

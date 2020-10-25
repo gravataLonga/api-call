@@ -31,6 +31,6 @@ func TestGenerateOperationId(t *testing.T) {
 	location, _ := time.LoadLocation("UTC")
 	a := AuditInfo{ClientIP: "127.0.0.1", Host: "localhost", Timestamp: time.Date(2020, 1, 1, 0, 0, 0, 0, location)}
 	b := BaseStandard{AuditInfo: a}
-	op, _ := b.NewOperationId()
+	op, _ := b.newOperationId()
 	assert.Equal(t, "0b00fff8ca0e86cb772c7ef037c6713d", op)
 }
