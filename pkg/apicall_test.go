@@ -50,6 +50,28 @@ func TestPassingOptions(t *testing.T) {
 	}
 }
 
+func TestBuildUrl(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		writer.Header().Set("Content-Type", "application/json")
+		json := `{"auditInfo":{},"items":[{"method":"` + request.Method + `","url":"` + request.URL.Path + `"}],"interfaceSettings":{}}`
+		_, _ = writer.Write([]byte(json))
+	}))
+	defer ts.Close()
+	apicall := NewApiCall(
+		WithTimeout(7*time.Second),
+		WithBaseUrl(ts.URL),
+	)
+	response, err := apicall.Send("POST", "/testing", strings.NewReader(`{"body":"hello"}`))
+	assert.Nil(t, err)
+	assert.Empty(t, response.AuditInfo.Errors)
+	assert.Zero(t, response.AuditInfo.Errors)
+	assert.Empty(t, response.AuditInfo.Warning)
+	assert.Zero(t, response.AuditInfo.Warning)
+	assert.Empty(t, response.AuditInfo.Info)
+	assert.Zero(t, response.AuditInfo.Info)
+
+}
+
 func TestBasicSend(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		writer.Header().Set("Content-Type", "application/json")
@@ -72,6 +94,12 @@ func TestBasicSend(t *testing.T) {
 	assert.Equal(t, ip, response.ClientIP)
 	assert.Equal(t, 200, response.StatusCode)
 	assert.NotEmpty(t, response.OperationId)
+	assert.Empty(t, response.AuditInfo.Errors)
+	assert.Zero(t, response.AuditInfo.Errors)
+	assert.Empty(t, response.AuditInfo.Warning)
+	assert.Zero(t, response.AuditInfo.Warning)
+	assert.Empty(t, response.AuditInfo.Info)
+	assert.Zero(t, response.AuditInfo.Info)
 	assert.True(t, response.IsOk())
 }
 
@@ -101,6 +129,12 @@ func TestCanParseItems(t *testing.T) {
 	assert.NotNil(t, myItems)
 	assert.Nil(t, err, "Don't expect error here")
 	assert.Len(t, myItems, 1)
+	assert.Empty(t, response.AuditInfo.Errors)
+	assert.Zero(t, response.AuditInfo.Errors)
+	assert.Empty(t, response.AuditInfo.Warning)
+	assert.Zero(t, response.AuditInfo.Warning)
+	assert.Empty(t, response.AuditInfo.Info)
+	assert.Zero(t, response.AuditInfo.Info)
 	assert.Exactly(t, myItems, expectedItems, "Unable to get items from response")
 	assert.True(t, response.IsOk())
 }
@@ -123,6 +157,12 @@ func TestCanParseOk(t *testing.T) {
 	)
 	response, err := apicall.Send("GET", ts.URL, nil)
 	assert.Nil(t, err)
+	assert.Empty(t, response.AuditInfo.Errors)
+	assert.Zero(t, response.AuditInfo.Errors)
+	assert.Empty(t, response.AuditInfo.Warning)
+	assert.Zero(t, response.AuditInfo.Warning)
+	assert.Empty(t, response.AuditInfo.Info)
+	assert.Zero(t, response.AuditInfo.Info)
 	assert.Exactly(t, true, response.IsOk())
 }
 

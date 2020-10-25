@@ -51,7 +51,7 @@ func WithTimeout(duration time.Duration) Option {
 // be compatible with BaseStandard
 func (a *ApiCall) Send(method, url string, body io.Reader) (*BaseStandard, error) {
 	var baseResponse = newBaseStandard(a)
-	response, err := makeRequest(*a.ctx, method, url, body)
+	response, err := makeRequest(*a.ctx, method, a.BaseUrl+url, body)
 
 	if err != nil {
 		return formatExceptionResponse(baseResponse, response, err), nil
