@@ -23,7 +23,7 @@ jobs:
       - name: Set up Go 1.15
         uses: actions/setup-go@v2
         with:
-          go-version: ${{ matrix.go-version }}
+          go-version: ubuntu-latest # ${{ matrix.go-version }} <- give conflit on github... you need to use yml configuration for that
         id: go
 
       - name: Run GoReleaser
