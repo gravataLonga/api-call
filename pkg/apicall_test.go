@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -255,6 +254,9 @@ func TestIfReturnErrors(t *testing.T) {
 	response, err := apicall.Send("GET", ts.URL, nil)
 	assert.Nil(t, err)
 	assert.Exactly(t, false, response.IsOk())
+	assert.NotEmpty(t, response.AuditInfo.Errors.Items)
+	assert.Equal(t, "An error happen!", response.AuditInfo.Errors.Items[0].Description)
+	assert.Equal(t, "200", response.AuditInfo.Errors.Items[0].Code)
 }
 
 func TestTimeoutReach(t *testing.T) {
@@ -284,13 +286,11 @@ func TestAddHeader(t *testing.T) {
 	assert.Equal(t, "abcdefghijk", apicall.Headers.Get("Token"))
 }
 
-func Test(t *testing.T) {
+func TestGetTimeout(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, r *http.Request) {
 		time.Sleep(200 * time.Millisecond)
 		writer.Header().Set("Content-Type", "application/json")
-		b, _ := ioutil.ReadAll(r.Body)
-		defer r.Body.Close()
-		j := `{"auditInfo":{},"items":[` + string(b) + `}],"interfaceSettings":{}}`
+		j := `{"auditInfo":{},"items":[],"interfaceSettings":{}}`
 		_, _ = writer.Write([]byte(j))
 	}))
 	defer ts.Close()
@@ -298,5 +298,7 @@ func Test(t *testing.T) {
 		WithTimeout(100 * time.Millisecond),
 	)
 	resp, _ := apicall.Send("GET", ts.URL, strings.NewReader(`{"hello":"world"}`))
-	fmt.Println(resp)
+	assert.NotEmpty(t, resp.AuditInfo.Errors.Items)
+	assert.Equal(t, "Timeout", resp.AuditInfo.Errors.Items[0].Description)
+	assert.Equal(t, "1", resp.AuditInfo.Errors.Items[0].Code)
 }
