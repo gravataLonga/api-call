@@ -5,11 +5,13 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -128,13 +130,27 @@ func formatResponse(baseResponse *BaseStandard, response *http.Response) error {
 	}
 	err = json.Unmarshal(binary, baseResponse)
 	if err != nil {
-		return err
+		baseResponse.Errors.Items = append(baseResponse.Errors.Items, fallbackResponse(binary, err))
 	}
 
 	baseResponse.AuditInfo.StatusCode = response.StatusCode
 	baseResponse.AuditInfo.Duration = time.Since(baseResponse.Timestamp)
 
 	return nil
+}
+
+func fallbackResponse(r []byte, err error) Meta {
+	if e, ok := err.(*json.SyntaxError); ok {
+		return Meta{
+			Code:        "syntaxerror",
+			Description: fmt.Sprintf("%v[%v] - %s", e.Error(), strconv.FormatInt(e.Offset, 10), r),
+		}
+	}
+
+	return Meta{
+		Code:        "error",
+		Description: fmt.Sprintf("%s", r),
+	}
 }
 
 func formatExceptionResponse(baseResponse *BaseStandard, response *http.Response, err error) *BaseStandard {

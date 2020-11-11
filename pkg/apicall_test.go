@@ -302,3 +302,20 @@ func TestGetTimeout(t *testing.T) {
 	assert.Equal(t, "Timeout", resp.AuditInfo.Errors.Items[0].Description)
 	assert.Equal(t, "1", resp.AuditInfo.Errors.Items[0].Code)
 }
+
+func TestIfUnableDecodeGetFullResponseAsJson(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, r *http.Request) {
+		writer.Header().Set("Content-Type", "text/html")
+		_, _ = writer.Write([]byte("Hello World"))
+	}))
+	defer ts.Close()
+	apicall := NewApiCall(
+		WithTimeout(100*time.Millisecond),
+		WithBaseUrl(ts.URL),
+	)
+	resp, err := apicall.Send("GET", "/hello-world", nil)
+
+	assert.Nil(t, err)
+	assert.NotEmpty(t, resp.AuditInfo.Errors.String())
+	assert.Equal(t, "[syntaxerror]: invalid character 'H' looking for beginning of value[1] - Hello World", resp.AuditInfo.Errors.String())
+}
