@@ -319,3 +319,21 @@ func TestIfUnableDecodeGetFullResponseAsJson(t *testing.T) {
 	assert.NotEmpty(t, resp.AuditInfo.Errors.String())
 	assert.Equal(t, "[syntaxerror]: invalid character 'H' looking for beginning of value[1] - Hello World", resp.AuditInfo.Errors.String())
 }
+
+func TestSetProperlyHeader(t *testing.T) {
+	var header string
+	ts := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, r *http.Request) {
+		header = r.Header.Get("Authorization")
+		writer.Header().Set("Content-Type", "text/html")
+		_, _ = writer.Write([]byte("Hello World"))
+	}))
+	defer ts.Close()
+	apicall := NewApiCall(
+		WithTimeout(100*time.Millisecond),
+		WithBaseUrl(ts.URL),
+		WithAuthentication("jonathan", "12345678"),
+	)
+	apicall.Send("GET", "/hello-world", nil)
+
+	assert.NotEmpty(t, header)
+}

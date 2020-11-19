@@ -64,7 +64,7 @@ func WithTimeout(duration time.Duration) Option {
 func WithAuthentication(username, password string) Option {
 	return func(a ApiCall) *ApiCall {
 		encode := base64.URLEncoding.EncodeToString([]byte(username + ":" + password))
-		a.Headers.Set("Authorization", "Basic "+encode)
+		a.Headers.Add("Authorization", "Basic "+encode)
 		return &a
 	}
 }
@@ -73,7 +73,7 @@ func WithAuthentication(username, password string) Option {
 // be compatible with BaseStandard
 func (a *ApiCall) Send(method, url string, body io.Reader) (*BaseStandard, error) {
 	var baseResponse = newBaseStandard(a)
-	response, err := makeRequest(*a.ctx, method, a.BaseUrl+url, body)
+	response, err := makeRequest(*a.ctx, method, a.BaseUrl+url, body, a.Headers)
 
 	if err != nil {
 		return formatExceptionResponse(baseResponse, response, err), nil
@@ -88,11 +88,12 @@ func (a *ApiCall) Send(method, url string, body io.Reader) (*BaseStandard, error
 }
 
 // makeRequest is a function used internally only to make request
-func makeRequest(ctx context.Context, method, url string, body io.Reader) (*http.Response, error) {
+func makeRequest(ctx context.Context, method, url string, body io.Reader, headers http.Header) (*http.Response, error) {
 	req, err := http.NewRequestWithContext(ctx, method, url, body)
 	if err != nil {
 		return nil, err
 	}
+	req.Header = headers
 	req.Header.Add("Content-Type", "application/json; charset=UTF-8")
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
