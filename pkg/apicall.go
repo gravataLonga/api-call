@@ -52,7 +52,7 @@ func WithBaseUrl(base string) Option {
 	}
 }
 
-// WithBaseUrl it will modified ApiCall.Timeout field
+// WithTimeout it will modified ApiCall.Timeout field
 func WithTimeout(duration time.Duration) Option {
 	return func(a ApiCall) *ApiCall {
 		a.Timeout = duration

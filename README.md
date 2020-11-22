@@ -2,7 +2,7 @@
 
 ![Test](https://github.com/gravataLonga/api-call/workflows/Test/badge.svg?branch=master)
 [![Coverage Status](https://coveralls.io/repos/github/gravataLonga/api-call/badge.svg?branch=master)](https://coveralls.io/github/gravataLonga/api-call?branch=master)
-[![Go Report Card](https://goreportcard.com/badge/github.com/gravatalonga/api-call)](https://goreportcard.com/badge/github.com/gravatalonga/api-call)   
+[![Go Report Card](https://goreportcard.com/badge/github.com/gravataLonga/api-call)](https://goreportcard.com/report/github.com/gravataLonga/api-call)
 
 Read [documentation here](https://pkg.go.dev/mod/github.com/gravataLonga/api-call).
 

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"github.com/gravataLonga/api-call/pkg"
@@ -29,7 +28,7 @@ func run() error {
 	}
 
 	if !base.Ok {
-		return errors.New(fmt.Sprintf("Got errors %v", base.Errors.String()))
+		return fmt.Errorf("Got errors %v", base.Errors.String())
 	}
 
 	return nil
