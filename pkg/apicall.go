@@ -135,7 +135,6 @@ func formatResponse(baseResponse *BaseStandard, response *http.Response) error {
 	}
 
 	baseResponse.AuditInfo.StatusCode = response.StatusCode
-	baseResponse.AuditInfo.Duration = time.Since(baseResponse.Timestamp)
 
 	return nil
 }

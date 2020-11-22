@@ -39,7 +39,7 @@ func (i Items) String() string {
 // request/response from server side
 type AuditInfo struct {
 	// Duration of request
-	Duration time.Duration `json:"duration"`
+	Duration float64 `json:"duration"`
 	// Timestamp when the request started
 	Timestamp time.Time `json:"timestamp"`
 	// Host is hostname of made request

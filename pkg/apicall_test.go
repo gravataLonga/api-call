@@ -337,3 +337,33 @@ func TestSetProperlyHeader(t *testing.T) {
 
 	assert.NotEmpty(t, header)
 }
+
+func TestCanParseAuditInfo(t *testing.T) {
+	type ItemToken struct {
+		Token string `json:"token"`
+	}
+	ts := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		writer.Header().Set("Content-Type", "application/json")
+		json := `{"items":{"token":"token"},"auditInfo":{"duration":0.027,"host":"test.com","dbHost":"dbHost","clientIP":"127.0.0.1","ok":true,"errors":{"items":[]},"info":{"items":[]},"warning":{"items":[]},"total":1,"env":"local","version":"1.0.0 - 2020-01-01 00:00:00","tokenAudience":""},"interfaceSettings":[]}`
+		_, _ = writer.Write([]byte(json))
+	}))
+	defer ts.Close()
+	apicall := NewApiCall(
+		WithBaseUrl(ts.URL),
+	)
+	response, err := apicall.Send("POST", "/", nil)
+	items := &ItemToken{}
+	errGetItems := response.GetItems(items)
+
+	assert.Nil(t, errGetItems)
+	assert.Nil(t, err)
+	assert.Equal(t, "token", items.Token)
+	assert.Equal(t, 0.027, response.AuditInfo.Duration)
+	assert.Equal(t, "test.com", response.AuditInfo.Host)
+	assert.Equal(t, "127.0.0.1", response.AuditInfo.ClientIP)
+	assert.Equal(t, true, response.AuditInfo.Ok)
+
+	assert.Empty(t, response.AuditInfo.Errors.Items)
+	assert.Empty(t, response.AuditInfo.Warning.Items)
+	assert.Empty(t, response.AuditInfo.Info.Items)
+}
